@@ -1,12 +1,16 @@
 // ==UserScript==
-// @name         Redmine Gantt: Add start and due dates to gant
+// @name         Redmine Gantt: Add start and due dates
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
-// @description  try to take over the world!
-// @author       You
-// @match        http://*/*
-// @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
-// @grant        none
+// @version      1.0.1
+// @description  Add start and due dates to the Gant table
+// @author       Bohdan Y.
+// @match        http://redmine.cmbu-engineering.diasemi.com/*
+// @run-at       document-idle
+// @grant        GM_getValue
+// @grant        GM_setValue
+
+// @downloadURL  https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%20Gantt%3A%20Add%20start%20and%20due%20dates%20to%20gant.user.js
+// @updateURL    https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%20Gantt%3A%20Add%20start%20and%20due%20dates%20to%20gant.user.js
 // ==/UserScript==
 
 // @require      http://localhost:5500/StartAndDuedateInGunt.user.js
@@ -14,7 +18,13 @@
 (function () {
       'use strict';
 
-      const API_KEY = '61bcfef8f5058afad6883e2e6b91bd5469d629dc'; // Replace with your Redmine API Key
+
+      let API_KEY = GM_getValue('apiKey');
+      if (!API_KEY) {
+            API_KEY = prompt('Please enter your API key:');
+            if (API_KEY) GM_setValue('apiKey', API_KEY);
+      }
+      
       const REDMINE_URL = 'http://redmine.cmbu-engineering.diasemi.com'; // Replace with your Redmine instance URL
 
       async function getSubtasks(issueKey) {

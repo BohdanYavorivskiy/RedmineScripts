@@ -1,19 +1,23 @@
 // ==UserScript==
-// @name         Redmine: Add release tag
+// @name         Redmine Gantt: Redmine: Add release tag
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
-// @description  try to take over the world!
-// @author       You
-// @match        http://*/*
-// @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
-// @grant        none
+// @version      1.0.1
+// @description  Takes a release version from epiq and draw on Gant diagram 
+// @author       Bohdan Y.
+// @match        http://redmine.cmbu-engineering.diasemi.com/*
+// @run-at       document-idle
+// @grant        GM_getValue
+// @grant        GM_setValue
+
+// @downloadURL  https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20release%20tag.user.js
+// @updateURL    https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20release%20tag.user.js
 // ==/UserScript==
 
 (function () {
       'use strict';
 
-      const releaseTextMark = 'R ';
-      const currentReleaseVersion = '6.51.001';
+      const releaseTextMark = 'r';
+      const currentReleaseVersion = '6.52.001';
 
       const redFullColour = '#ff0000';
 
@@ -165,6 +169,7 @@ function createEpicSpan(epicData) {
 
         if (releaseText) {
             fullText += releaseText;
+            fullText = fullText.slice(3);
             applyReleaseColor(span, releaseText[0]);
         } else {
             fullText += 'NO TAG';
