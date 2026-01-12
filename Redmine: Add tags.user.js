@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: Add tags selector
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Add tags setector near Issue Subject fild
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*

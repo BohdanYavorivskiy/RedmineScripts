@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Gantt: Redmine: Add release tag
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Takes a release version from epiq and draw on Gant diagram 
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -27,100 +27,100 @@
       const blueColour = '#70b1ff82';
       const greenColour = '#aee678c4';
 
-      async function getSubtasks(issueKey) {
-            const taskId = issueKey.replace("issue-", "");
-            const url = `${REDMINE_URL}/issues/${taskId}.json?include=children`;
+      // async function getSubtasks(issueKey) {
+      //       const taskId = issueKey.replace("issue-", "");
+      //       const url = `${REDMINE_URL}/issues/${taskId}.json?include=children`;
 
-            try {
-                  const response = await fetch(url, {
-                        headers: {
-                              "X-Redmine-API-Key": API_KEY
-                        }
-                  });
+      //       try {
+      //             const response = await fetch(url, {
+      //                   headers: {
+      //                         "X-Redmine-API-Key": API_KEY
+      //                   }
+      //             });
 
-                  if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+      //             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
-                  const data = await response.json();
-                  if (data.issue.children) {
-                        // console.log("Subtasks:", data.issue.children);
-                        return data.issue.children;
-                  } else {
-                        // console.log("No subtasks found.");
-                        return [];
-                  }
-            } catch (error) {
-                  console.error("Error fetching subtasks:", error);
-            }
-      }
+      //             const data = await response.json();
+      //             if (data.issue.children) {
+      //                   // console.log("Subtasks:", data.issue.children);
+      //                   return data.issue.children;
+      //             } else {
+      //                   // console.log("No subtasks found.");
+      //                   return [];
+      //             }
+      //       } catch (error) {
+      //             console.error("Error fetching subtasks:", error);
+      //       }
+      // }
 
-      async function getIssueProperties(issueKey, key1, key2) {
-            const issueId = issueKey.replace("issue-", "");
+      // async function getIssueProperties(issueKey, key1, key2) {
+      //       const issueId = issueKey.replace("issue-", "");
 
-            try {
-                  const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?include=children?key=${API_KEY}`);
-                  if (!response.ok) throw new Error("Network response was not ok");
+      //       try {
+      //             const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?include=children?key=${API_KEY}`);
+      //             if (!response.ok) throw new Error("Network response was not ok");
 
-                  const data = await response.json();
-                  const issueData = data.issue;
-                  return [issueData.hasOwnProperty(key1) ? issueData[key1] : null, issueData.hasOwnProperty(key2) ? issueData[key2] : null];
-            } catch (error) {
-                  console.error("Error fetching issue:", error);
-                  return [];
-            }
-      }
+      //             const data = await response.json();
+      //             const issueData = data.issue;
+      //             return [issueData.hasOwnProperty(key1) ? issueData[key1] : null, issueData.hasOwnProperty(key2) ? issueData[key2] : null];
+      //       } catch (error) {
+      //             console.error("Error fetching issue:", error);
+      //             return [];
+      //       }
+      // }
 
-      function fetchIssue(issueId) {
-            return fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`)
-                  .then(response => {
-                        if (!response.ok) throw new Error(`Issue ${issueId} not found`);
-                        return response.json();
-                  });
-      }
+      // function fetchIssue(issueId) {
+      //       return fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`)
+      //             .then(response => {
+      //                   if (!response.ok) throw new Error(`Issue ${issueId} not found`);
+      //                   return response.json();
+      //             });
+      // }
 
-      function findTopParent(issueId) {
-            return fetchIssue(issueId)
-                  .then(data => {
-                        const issue = data.issue;
-                        if (issue.parent) {
-                              console.log(`Issue ${issue.id} has parent ${issue.parent.id}`);
-                              return findTopParent(issue.parent.id); // Recursive call
-                        } else {
-                              console.log(`Top-most parent (Epic?):`, issue);
-                              return issue;
-                        }
-                  })
-                  .catch(error => console.error("Error:", error));
-      }
+      // function findTopParent(issueId) {
+      //       return fetchIssue(issueId)
+      //             .then(data => {
+      //                   const issue = data.issue;
+      //                   if (issue.parent) {
+      //                         console.log(`Issue ${issue.id} has parent ${issue.parent.id}`);
+      //                         return findTopParent(issue.parent.id); // Recursive call
+      //                   } else {
+      //                         console.log(`Top-most parent (Epic?):`, issue);
+      //                         return issue;
+      //                   }
+      //             })
+      //             .catch(error => console.error("Error:", error));
+      // }
 
-      async function updateIssueProperty(issueKey, jsonKey, value) {
+      // async function updateIssueProperty(issueKey, jsonKey, value) {
 
-            const issueId = issueKey.replace("issue-", "");
-            // Prepare the data to send to the Redmine API
-            const requestData = {
-                  issue: {
-                        [jsonKey]: value // New due date to set
-                  }
-            };
+      //       const issueId = issueKey.replace("issue-", "");
+      //       // Prepare the data to send to the Redmine API
+      //       const requestData = {
+      //             issue: {
+      //                   [jsonKey]: value // New due date to set
+      //             }
+      //       };
 
-            try {
-                  const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`, {
-                        method: 'PUT',
-                        headers: {
-                              'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(requestData) // Send data as JSON
-                  });
+      //       try {
+      //             const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`, {
+      //                   method: 'PUT',
+      //                   headers: {
+      //                         'Content-Type': 'application/json'
+      //                   },
+      //                   body: JSON.stringify(requestData) // Send data as JSON
+      //             });
 
-                  if (response.ok) {
-                        const data = await response.json();
-                        console.log("Start date updated successfully:", data);
-                  } else {
-                        console.error("Error updating start date:", response.statusText);
-                  }
-            } catch (error) {
-                  console.error("Network or request error:", error);
-            }
-      }
+      //             if (response.ok) {
+      //                   const data = await response.json();
+      //                   console.log("Start date updated successfully:", data);
+      //             } else {
+      //                   console.error("Error updating start date:", response.statusText);
+      //             }
+      //       } catch (error) {
+      //             console.error("Network or request error:", error);
+      //       }
+      // }
 
 
       function versionToNumber(versions) {

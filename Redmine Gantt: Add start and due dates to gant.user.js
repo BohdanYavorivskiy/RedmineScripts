@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Gantt: Add start and due dates
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Add start and due dates to the Gant table
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -19,77 +19,77 @@
 (function () {
       'use strict';
 
-      async function getSubtasks(issueKey) {
-            const taskId = issueKey.replace("issue-", "");
-            const url = `${REDMINE_URL}/issues/${taskId}.json?include=children`;
+      // async function getSubtasks(issueKey) {
+      //       const taskId = issueKey.replace("issue-", "");
+      //       const url = `${REDMINE_URL}/issues/${taskId}.json?include=children`;
 
-            try {
-                  const response = await fetch(url, {
-                        headers: {
-                              "X-Redmine-API-Key": API_KEY
-                        }
-                  });
+      //       try {
+      //             const response = await fetch(url, {
+      //                   headers: {
+      //                         "X-Redmine-API-Key": API_KEY
+      //                   }
+      //             });
 
-                  if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+      //             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
-                  const data = await response.json();
-                  if (data.issue.children) {
-                        // console.log("Subtasks:", data.issue.children);
-                        return data.issue.children;
-                  } else {
-                        // console.log("No subtasks found.");
-                        return [];
-                  }
-            } catch (error) {
-                  console.error("Error fetching subtasks:", error);
-            }
-      }
+      //             const data = await response.json();
+      //             if (data.issue.children) {
+      //                   // console.log("Subtasks:", data.issue.children);
+      //                   return data.issue.children;
+      //             } else {
+      //                   // console.log("No subtasks found.");
+      //                   return [];
+      //             }
+      //       } catch (error) {
+      //             console.error("Error fetching subtasks:", error);
+      //       }
+      // }
 
-      async function getIssueProperty(issueKey, key) {
-            const issueId = issueKey.replace("issue-", "");
+      // async function getIssueProperty(issueKey, key) {
+      //       const issueId = issueKey.replace("issue-", "");
 
-            try {
-                  const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?include=children?key=${API_KEY}`);
-                  if (!response.ok) throw new Error("Network response was not ok");
+      //       try {
+      //             const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?include=children?key=${API_KEY}`);
+      //             if (!response.ok) throw new Error("Network response was not ok");
 
-                  const data = await response.json();
-                  const issueData = data.issue;
-                  return issueData.hasOwnProperty(key) ? issueData[key] : null;
-            } catch (error) {
-                  console.error("Error fetching issue:", error);
-                  return null;
-            }
-      }
+      //             const data = await response.json();
+      //             const issueData = data.issue;
+      //             return issueData.hasOwnProperty(key) ? issueData[key] : null;
+      //       } catch (error) {
+      //             console.error("Error fetching issue:", error);
+      //             return null;
+      //       }
+      // }
 
-      async function updateIssueProperty(issueKey, jsonKey, value) {
+      // async function updateIssueProperty(issueKey, jsonKey, value) {
 
-            const issueId = issueKey.replace("issue-", "");
-            // Prepare the data to send to the Redmine API
-            const requestData = {
-                  issue: {
-                        [jsonKey]: value // New due date to set
-                  }
-            };
+      //       const issueId = issueKey.replace("issue-", "");
+      //       // Prepare the data to send to the Redmine API
+      //       const requestData = {
+      //             issue: {
+      //                   [jsonKey]: value // New due date to set
+      //             }
+      //       };
 
-            try {
-                  const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`, {
-                        method: 'PUT',
-                        headers: {
-                              'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(requestData) // Send data as JSON
-                  });
+      //       try {
+      //             const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`, {
+      //                   method: 'PUT',
+      //                   headers: {
+      //                         'Content-Type': 'application/json'
+      //                   },
+      //                   body: JSON.stringify(requestData) // Send data as JSON
+      //             });
 
-                  if (response.ok) {
-                        const data = await response.json();
-                        console.log("Start date updated successfully:", data);
-                  } else {
-                        console.error("Error updating start date:", response.statusText);
-                  }
-            } catch (error) {
-                  console.error("Network or request error:", error);
-            }
-      }
+      //             if (response.ok) {
+      //                   const data = await response.json();
+      //                   console.log("Start date updated successfully:", data);
+      //             } else {
+      //                   console.error("Error updating start date:", response.statusText);
+      //             }
+      //       } catch (error) {
+      //             console.error("Network or request error:", error);
+      //       }
+      // }
 
       const redColour = '#ff6666b5';
       const yellowColour = '#ffea8c';

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: Add button to set default values for Impl part
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Add 'Make Implementation', a button that sets all task fluids in the most suitable state for the Implementation part based on the parent task.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -17,25 +17,25 @@
 (function () {
       'use strict';
 
-      async function getIssueData(issueKey) {
-            // Extract numeric issue ID
-            const issueId = issueKey;
+      // async function getIssueData(issueKey) {
+      //       // Extract numeric issue ID
+      //       const issueId = issueKey;
 
-            try {
-                  // Fetch issue details
-                  const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`);
+      //       try {
+      //             // Fetch issue details
+      //             const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`);
 
-                  if (!response.ok) {
-                        throw new Error("Network response was not ok");
-                  }
+      //             if (!response.ok) {
+      //                   throw new Error("Network response was not ok");
+      //             }
 
-                  const data = await response.json();
-                  return data;
-            } catch (error) {
-                  console.error("Error fetching issue:", error);
-                  return null; // Return null or an appropriate value in case of error
-            }
-      }
+      //             const data = await response.json();
+      //             return data;
+      //       } catch (error) {
+      //             console.error("Error fetching issue:", error);
+      //             return null; // Return null or an appropriate value in case of error
+      //       }
+      // }
 
 
       function addSetDefaultFilds() {
@@ -43,27 +43,6 @@
             const newIssue = document.querySelector('.new_issue');
 
             if (!newIssue) return;
-            /*
-                        const button = document.createElement("button");
-                        button.textContent = "Click Me";
-                        button.classList.add("default-custom-button");
-                        const style = document.createElement("style");
-                        style.textContent = `
-                            .default-custom-button {
-                              background-color: #007bff;
-                              color: white;
-                              border: none;
-                              cursor: pointer;
-                            }
-                            .default-custom-button:hover {
-                              background-color: #0056b3;
-                            }
-                            `;
-
-                           document.head.appendChild(style);
-                           newIssue.append(button);
-            */
-
             if (document.querySelector('.set_default_data_link')) return;
 
             const assignLink = document.createElement("a");

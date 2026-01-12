@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: Highlite estimated/spend time
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Highlight if the estimated time is 0. Highlight if there is a difference between the estimate and the spent times.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -26,29 +26,29 @@
     const blueColour = '#70b1ff82';
     const greenColour = '#aee678c4';
 
-    async function getIssueProperties(issueKey, key1, key2) {
-        const issueId = issueKey.replace("issue-", "");
+    // async function getIssueProperties(issueKey, key1, key2) {
+    //     const issueId = issueKey.replace("issue-", "");
 
-        try {
-            const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?include=children?key=${API_KEY}`);
-            if (!response.ok) throw new Error("Network response was not ok");
+    //     try {
+    //         const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?include=children?key=${API_KEY}`);
+    //         if (!response.ok) throw new Error("Network response was not ok");
 
-            const data = await response.json();
-            const issueData = data.issue;
-            return [issueData.hasOwnProperty(key1) ? issueData[key1] : null, issueData.hasOwnProperty(key2) ? issueData[key2] : null];
-        } catch (error) {
-            console.error("Error fetching issue:", error);
-            return [];
-        }
-    }
+    //         const data = await response.json();
+    //         const issueData = data.issue;
+    //         return [issueData.hasOwnProperty(key1) ? issueData[key1] : null, issueData.hasOwnProperty(key2) ? issueData[key2] : null];
+    //     } catch (error) {
+    //         console.error("Error fetching issue:", error);
+    //         return [];
+    //     }
+    // }
 
-    function fetchIssue(issueId) {
-        return fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`)
-            .then(response => {
-                if (!response.ok) throw new Error(`Issue ${issueId} not found`);
-                return response.json();
-            });
-    }
+    // function fetchIssue(issueId) {
+    //     return fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`)
+    //         .then(response => {
+    //             if (!response.ok) throw new Error(`Issue ${issueId} not found`);
+    //             return response.json();
+    //         });
+    // }
 
     function addEpicInfo() {
         const tableRow = document.querySelector('.gantt-table tbody tr');
