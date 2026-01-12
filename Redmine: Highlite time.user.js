@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Redmine: Highlite estimated/spend time
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Highlight if the estimated time is 0. Highlight if there is a difference between the estimate and the spent times.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
 // @run-at       document-idle
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/GetApiKey.js
 
 // @downloadURL  https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Highlite%20time.user.js
 // @updateURL    https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Highlite%20time.user.js
@@ -24,14 +25,6 @@
     const yellowColour = '#ffea8c';
     const blueColour = '#70b1ff82';
     const greenColour = '#aee678c4';
-
-
-    let API_KEY = GM_getValue('apiKey');
-    if (!API_KEY) {
-        API_KEY = prompt('Please enter your API key:');
-        if (API_KEY) GM_setValue('apiKey', API_KEY);
-    }
-    const REDMINE_URL = 'http://redmine.cmbu-engineering.diasemi.com';
 
     async function getIssueProperties(issueKey, key1, key2) {
         const issueId = issueKey.replace("issue-", "");

@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Redmine: Add button to set default values for Impl part
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Add 'Make Implementation', a button that sets all task fluids in the most suitable state for the Implementation part based on the parent task.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
 // @run-at       document-idle
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/GetApiKey.js
 
 // @downloadURL  https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20btn%20to%20fit%20task%20to%20impl%20part.user.js
 // @updateURL    https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20btn%20to%20fit%20task%20to%20impl%20part.user.js
@@ -15,15 +16,6 @@
 
 (function () {
       'use strict';
-
-
-      let API_KEY = GM_getValue('apiKey');
-      if (!API_KEY) {
-            API_KEY = prompt('Please enter your API key:');
-            if (API_KEY) GM_setValue('apiKey', API_KEY);
-      }
-
-      const REDMINE_URL = 'http://redmine.cmbu-engineering.diasemi.com'; // Replace with your Redmine instance URL
 
       async function getIssueData(issueKey) {
             // Extract numeric issue ID

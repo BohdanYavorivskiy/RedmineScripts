@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Redmine Gantt: Redmine: Add release tag
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Takes a release version from epiq and draw on Gant diagram 
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
 // @run-at       document-idle
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/GetApiKey.js
 
 // @downloadURL  https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20release%20tag.user.js
 // @updateURL    https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20release%20tag.user.js
@@ -25,9 +26,6 @@
       const yellowColour = '#ffea8c';
       const blueColour = '#70b1ff82';
       const greenColour = '#aee678c4';
-
-      const API_KEY = '61bcfef8f5058afad6883e2e6b91bd5469d629dc'; // Replace with your Redmine API Key
-      const REDMINE_URL = 'http://redmine.cmbu-engineering.diasemi.com'; // Replace with your Redmine instance URL
 
       async function getSubtasks(issueKey) {
             const taskId = issueKey.replace("issue-", "");

@@ -16,16 +16,6 @@
 (function () {
       'use strict';
 
-
-      let API_KEY = GM_getValue('apiKey');
-      if (!API_KEY) {
-            API_KEY = prompt('Please enter your API key:');
-            if (API_KEY) GM_setValue('apiKey', API_KEY);
-      }
-
-     // const API_KEY = '61bcfef8f5058afad6883e2e6b91bd5469d629dc'; // Replace with your Redmine API Key
-      const REDMINE_URL = 'http://redmine.cmbu-engineering.diasemi.com'; // Replace with your Redmine instance URL
-
       const values = [
             "[HWSupport] - used for parents related to the Hardware Support of the new part number/development platform",
             "[Lock] - issues related to chip's locks",

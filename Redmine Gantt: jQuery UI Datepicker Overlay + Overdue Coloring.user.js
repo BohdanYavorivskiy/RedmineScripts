@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Redmine Gantt: UI Datepicker Overlay + Overdue Coloring
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Hides sidebar; for each .issue_start_date / .issue_due_date, opens jQuery UI datepicker as an overlay. Allows month switching with no "Missing instance data". Colors overdue due dates in red.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
 // @run-at       document-idle
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/GetApiKey.js
 
 // @downloadURL  https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%20Gantt%3A%20jQuery%20UI%20Datepicker%20Overlay%20%2B%20Overdue%20Coloring.user.js
 // @updateURL    https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%20Gantt%3A%20jQuery%20UI%20Datepicker%20Overlay%20%2B%20Overdue%20Coloring.user.js
@@ -15,12 +16,6 @@
 
 (function() {
   'use strict';
-
-  let API_KEY = GM_getValue('apiKey');
-  if (!API_KEY) {
-    API_KEY = prompt('Please enter your API key:');
-    if (API_KEY) GM_setValue('apiKey', API_KEY);
-  }
 
   function injectDatepickerOverlayCSS() {
     const style = document.createElement('style');
@@ -116,7 +111,7 @@ function hideSidebar() {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Redmine-API-Key': REDMINE_API_KEY
+        'X-Redmine-API-Key': API_KEY
       },
       body: JSON.stringify(payload)
     });
