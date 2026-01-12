@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: Add tags selector
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Add tags setector near Issue Subject fild
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -193,14 +193,17 @@
                         search.style.marginRight = '6px';
                         search.style.minWidth = '160px';
                         search.style.padding = '2px 6px';
-                        // Insert search before the picker
+                        // Insert search before the picker (place search immediately after the subject input,
+                        // then place the picker after the search). This ensures the search appears on the left.
                         try {
-                              search.insertAdjacentElement('afterend', picker);
                               issueSubjectInput.insertAdjacentElement('afterend', search);
+                              search.insertAdjacentElement('afterend', picker);
                         } catch (e) {
-                              // fallback
-                              issueSubjectInput.parentNode && issueSubjectInput.parentNode.appendChild(search);
-                              issueSubjectInput.parentNode && issueSubjectInput.parentNode.appendChild(picker);
+                              // fallback: append to parent in correct left-to-right order
+                              if (issueSubjectInput.parentNode) {
+                                    issueSubjectInput.parentNode.appendChild(search);
+                                    issueSubjectInput.parentNode.appendChild(picker);
+                              }
                         }
 
                         // Helper to (re)populate select options based on a filter string
@@ -239,12 +242,6 @@
                               }
                         });
 
-                        // // If the input value matches an option, select it
-                        // if (issueSubjectInput.value) {
-                        //       const match = Array.from(picker.options).find(o => o.value === issueSubjectInput.value);
-                        //       if (match) picker.value = issueSubjectInput.value;
-                        // }
-
                         // When picker changes, insert the selected value inside square brackets
                         picker.addEventListener('change', () => {
 
@@ -280,13 +277,8 @@
                               issueSubjectInput.dispatchEvent(new Event('change', { bubbles: true }));
                         });
 
-                        // Insert the picker right after the subject input
-                        try {
-                              issueSubjectInput.insertAdjacentElement('afterend', picker);
-                        } catch (e) {
-                              // Fallback: append to parent
-                              issueSubjectInput.parentNode && issueSubjectInput.parentNode.appendChild(picker);
-                        }
+                        // picker (and search) were already inserted above next to the subject input.
+                        // No further insertion here to avoid reordering the elements.
                   }
             } else {
                   console.log('No #issue_subject input found on this page.');
