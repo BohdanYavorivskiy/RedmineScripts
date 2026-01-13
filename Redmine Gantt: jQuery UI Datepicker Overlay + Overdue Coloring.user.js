@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Gantt: UI Datepicker Overlay + Overdue Coloring
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Hides sidebar; for each .issue_start_date / .issue_due_date, opens jQuery UI datepicker as an overlay. Allows month switching with no "Missing instance data". Colors overdue due dates in red.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -101,193 +101,12 @@ function hideSidebar() {
   //   }
   // }
 
-  async function updateIssueDates(issueId, newStart, newDue) {
-    const url = `${location.origin}/issues/${issueId}.json`;
-    const payload = { issue: {} };
-    if (newStart) payload.issue.start_date = newStart;
-    if (newDue)   payload.issue.due_date   = newDue;
-
-    const resp = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Redmine-API-Key': API_KEY
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!resp.ok) {
-      throw new Error(`Update #${issueId} failed: ${resp.status} / ${resp.statusText}`);
-    }
-    console.log(`[IssueDateEdit] #${issueId} => start:${newStart || ''}, due:${newDue || ''}`);
-  }
-
-
-  function parseDateStr(str) {
-    // e.g. "Nov 25, 2024"
-    return new Date(str);
-  }
-
-  function formatDateForRedmine(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
-
-
-  function makeDateClickable(divEl) {
-    const oldText = divEl.textContent.trim();
-    const link = document.createElement('a');
-    link.href = 'javascript:void(0)';
-    link.style.textDecoration = 'underline';
-    link.style.cursor = 'pointer';
-    link.textContent = oldText;
-
-    // If it's a "due date," check if it's overdue => color in red
-    if (divEl.classList.contains('issue_due_date')) {
-      maybeColorOverdue(link, oldText);
-    }
-
-    link.addEventListener('click', () => {
-      showDateInput(divEl, oldText);
-    });
-
-    divEl.textContent = '';
-    divEl.appendChild(link);
-  }
-
-  function maybeColorOverdue(link, dateStr) {
-    const dateObj = parseDateStr(dateStr);
-    if (isNaN(dateObj.getTime())) return;
-
-    // Compare to "today" (0:00 local time)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (dateObj < today) {
-      link.style.color = '#cc0000';
-    }
-  }
-
-  function showDateInput(divEl, oldVal) {
-    const inputId = `datepicker_input_${Math.floor(Math.random() * 1e9)}`;
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.id = inputId;
-    input.value = oldVal;
-
-    // style so it's not cut off
-    input.style.width = '9em';
-    input.style.fontSize = '12px';
-    input.style.padding = '2px';
-
-    // replace the div's content with new input
-    divEl.textContent = '';
-    divEl.appendChild(input);
-    input.focus();
-
-    // Keep a blur fallback if user never picks a date
-    input.addEventListener('blur', () => {
-      setTimeout(() => {
-        if (document.activeElement === input) return;
-        revertDiv(divEl, oldVal);
-      }, 150);
-    });
-
-    // Initialize datepicker after the delay
-    setTimeout(() => attachDatepicker(`#${inputId}`, divEl, oldVal), 0);
-  }
-
-  // The price for convenience, we need to use the calendar from jquery
-  function attachDatepicker(selector, divEl, oldVal) {
-    if (!window.jQuery || !jQuery.fn || typeof jQuery.fn.datepicker !== 'function') {
-      console.log('[IssueDateEdit] jQuery UI datepicker not found; fallback to text input only');
-      return;
-    }
-
-    const $input = jQuery(selector);
-
-    $input.datepicker({
-      dateFormat: 'M d, yy',
-      appendTo: 'body',
-      onClose: function() {
-        const newVal = this.value.trim();
-        if (newVal && newVal !== oldVal) {
-          applyNewValue(divEl, newVal);
-        } else {
-          revertDiv(divEl, oldVal);
-        }
-      }
-    }).datepicker('show');
-  }
-
-
-  function applyNewValue(divEl, newStr) {
-    const dateObj = parseDateStr(newStr);
-    if (isNaN(dateObj.getTime())) {
-      alert('WTF, the date is invalid. Try "Nov 25, 2024".');
-      revertDiv(divEl, newStr);
-      return;
-    }
-
-    const isStart = divEl.classList.contains('issue_start_date');
-    const isDue   = divEl.classList.contains('issue_due_date');
-    const issueId = parseIssueId(divEl.id);
-
-    if (!issueId) {
-      console.warn('[IssueDateEdit] No issue ID in:', divEl.id);
-      revertDiv(divEl, newStr);
-      return;
-    }
-
-    let newStart = null, newDue = null;
-    if (isStart) newStart = formatDateForRedmine(dateObj);
-    if (isDue)   newDue   = formatDateForRedmine(dateObj);
-
-    updateIssueDates(issueId, newStart, newDue)
-      .then(() => {
-        revertDiv(divEl, newStr);
-        // TODO, refactor. Currently this is required to update Gannt chart on new date apply
-        window.location.reload();
-      })
-      .catch(err => {
-        console.error('Update date error:', err);
-        alert('Failed to update date, see console');
-        revertDiv(divEl, newStr);
-      });
-  }
-
-  function revertDiv(divEl, dateText) {
-    divEl.textContent = dateText;
-    makeDateClickable(divEl);
-  }
-
-  function parseIssueId(str) {
-    const m = str.match(/_(\d+)$/);
-    return m ? m[1] : null;
-  }
-
-
-  function attachDateLinks() {
-    const startDivs = document.querySelectorAll('div.issue_start_date');
-    const dueDivs   = document.querySelectorAll('div.issue_due_date');
-    const all = [...startDivs, ...dueDivs];
-    all.forEach(div => {
-      const txt = div.textContent.trim();
-      if (txt) makeDateClickable(div);
-    });
-    console.log('[IssueDateEdit] Attached to date fields:', all.length);
-  }
-
-
   function init() {
     const table = document.querySelector('.gantt-table tbody tr');
     if (!table) return;
 
     injectDatepickerOverlayCSS();
     hideSidebar();
-    attachDateLinks();
   }
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
