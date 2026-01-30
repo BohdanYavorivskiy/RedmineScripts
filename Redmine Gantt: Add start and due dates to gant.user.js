@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Gantt: Add start and due dates
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.1.0
 // @description  Add start and due dates to the Gant table
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -19,306 +19,176 @@
 (function () {
       'use strict';
 
-      // async function getSubtasks(issueKey) {
-      //       const taskId = issueKey.replace("issue-", "");
-      //       const url = `${REDMINE_URL}/issues/${taskId}.json?include=children`;
-
-      //       try {
-      //             const response = await fetch(url, {
-      //                   headers: {
-      //                         "X-Redmine-API-Key": API_KEY
-      //                   }
-      //             });
-
-      //             if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-
-      //             const data = await response.json();
-      //             if (data.issue.children) {
-      //                   // console.log("Subtasks:", data.issue.children);
-      //                   return data.issue.children;
-      //             } else {
-      //                   // console.log("No subtasks found.");
-      //                   return [];
-      //             }
-      //       } catch (error) {
-      //             console.error("Error fetching subtasks:", error);
-      //       }
-      // }
-
-      // async function getIssueProperty(issueKey, key) {
-      //       const issueId = issueKey.replace("issue-", "");
-
-      //       try {
-      //             const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?include=children?key=${API_KEY}`);
-      //             if (!response.ok) throw new Error("Network response was not ok");
-
-      //             const data = await response.json();
-      //             const issueData = data.issue;
-      //             return issueData.hasOwnProperty(key) ? issueData[key] : null;
-      //       } catch (error) {
-      //             console.error("Error fetching issue:", error);
-      //             return null;
-      //       }
-      // }
-
-      // async function updateIssueProperty(issueKey, jsonKey, value) {
-
-      //       const issueId = issueKey.replace("issue-", "");
-      //       // Prepare the data to send to the Redmine API
-      //       const requestData = {
-      //             issue: {
-      //                   [jsonKey]: value // New due date to set
-      //             }
-      //       };
-
-      //       try {
-      //             const response = await fetch(`${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`, {
-      //                   method: 'PUT',
-      //                   headers: {
-      //                         'Content-Type': 'application/json'
-      //                   },
-      //                   body: JSON.stringify(requestData) // Send data as JSON
-      //             });
-
-      //             if (response.ok) {
-      //                   const data = await response.json();
-      //                   console.log("Start date updated successfully:", data);
-      //             } else {
-      //                   console.error("Error updating start date:", response.statusText);
-      //             }
-      //       } catch (error) {
-      //             console.error("Network or request error:", error);
-      //       }
-      // }
-
       const redColour = '#ff6666b5';
       const yellowColour = '#ffea8c';
       const blueColour = '#70b1ff82';
       const greenColour = '#aee678c4';
 
-      function createColumn(hearedStr, columnName) {
-            const column = document.createElement('td');
-            column.style.width = '10px';
-            column.className = columnName;
-            column.style.verticalAlign = 'top';
-
-            const header = document.createElement('div');
-            header.style.verticalAlign = 'middle';
-            header.style.position = 'relative';
-            header.style.height = '72px';
-            header.style.background = '#eee';
-            header.innerHTML = 'Start Day';
-
-            const ganttHeader = document.querySelector('div.gantt_hdr');
-            if (ganttHeader)
-                  header.style.height = ganttHeader.style.height;
-
-            column.appendChild(header);
-
-            const hederSpace = document.createElement('div');
-            hederSpace.style.position = 'relative';
-            hederSpace.style.height = '3px';
-            hederSpace.style.background = '#FFF';
-
-            column.appendChild(hederSpace);
-
-            return column;
-      }
-
-      function creadeDateInputFild() {
-            const dateInput = document.createElement('input');
-            dateInput.type = 'date';
-            dateInput.classList.add('custom-date-picker');
-            dateInput.style.border = 'none';
-            dateInput.style.outline = 'none';
-            dateInput.style.width = '87px';
-            return dateInput;
-      }
-
-      function creadeEmptyCell() {
-            const newDiv1 = document.createElement('div');
-            newDiv1.style.position = 'relative';
-            newDiv1.style.height = '20px';
-            newDiv1.style.background = '#fff';
-            return newDiv1;
-      }
-
-      function addStartDateColumn() {
-            const table = document.querySelector('.gantt-table tbody tr');
-            if (!table) return;
-
-            const columnName = 'startdate_column';
-            if (document.querySelector('.' + columnName)) return;
-            const column = createColumn('Start Day', columnName);
-
-            const issueRows = table.querySelectorAll('.gantt_subjects div');
-            issueRows.forEach(row => {
-                  if (row.classList.contains('issue-subject')) {
-                        const dateInputCell = document.createElement('td');
-                        dateInputCell.classList.add('custom-column-cell');
-
-                        const dateInputFild = creadeDateInputFild();
-                        dateInputCell.appendChild(dateInputFild);
-
-                        const issueId = row.id;
-                        if (issueId) {
-                              getIssueProperty(issueId, 'start_date').then(startDate => {
-                                    dateInputFild.value = startDate;
-                                    if (!startDate) {
-                                          dateInputFild.style.backgroundColor = blueColour;
-                                          dateInputCell.style.backgroundColor = blueColour;
-                                    } else {
-                                          getIssueProperty(issueId, 'status').then(status => {
-                                                const startDateObj = new Date(startDate);
-                                                startDateObj.setHours(0, 0, 0, 0);
-                                                const today = new Date();
-                                                today.setHours(0, 0, 0, 0);
-
-                                                if (status.name == "Open") {
-                                                      if (startDateObj < today) {
-                                                            dateInputFild.style.backgroundColor = redColour;
-                                                            dateInputCell.style.backgroundColor = redColour;
-                                                      } else if (startDateObj > today) {
-                                                            dateInputFild.style.backgroundColor = greenColour;
-                                                            dateInputCell.style.backgroundColor = greenColour;
-                                                      } else {
-                                                            dateInputFild.style.backgroundColor = yellowColour;
-                                                            dateInputCell.style.backgroundColor = yellowColour;
-                                                      }
-                                                }
-                                          });
-                                    }
-                              });
-
-                              dateInputFild.addEventListener('change', () => {
-                                    const selectedDate = dateInputFild.value;
-                                    updateIssueProperty(issueId, 'start_date', selectedDate);
-                              });
-
-                              getSubtasks(issueId).then(subtasks => {
-                                    if (subtasks && subtasks.length > 0) {
-                                          dateInputFild.disabled = true;
-                                    }
-                              });
+      // inject CSS to style the custom date picker and hide the year where supported
+      (function addCustomDatePickerStyles() {
+            try {
+                  const s = document.createElement('style');
+                  s.type = 'text/css';
+                  s.textContent = `
+                        input.custom-date-picker {
+                              display: inline-block;
+                              border: none;
+                              background: transparent;
+                              font-size: 1.0em;
+                              padding: 0 2px 0 0; /* small right padding for calendar icon space */
+                              margin: 0;
+                              /* narrow the visible area so year is clipped */
+                              width: 50px; /* fits DD/MM or Mon D */
+                              height: 18px;
+                              line-height: 14px; /* keep text vertically towards top */
+                              vertical-align: top; /* align the element's box to the top of the line */
+                              overflow: hidden;
+                              white-space: nowrap;
+                              text-overflow: clip;
+                              -webkit-appearance: none;
+                              -moz-appearance: textfield;
                         }
+                        /* hide year field in WebKit-based browsers */
+                        input.custom-date-picker::-webkit-datetime-edit-year-field { display: none; }
+                        /* keep month and day visible for WebKit */
+                        input.custom-date-picker::-webkit-datetime-edit-month-field, input.custom-date-picker::-webkit-datetime-edit-day-field { display: inline; }
+                        /* small spacing for the calendar icon */
+                        input.custom-date-picker::-webkit-calendar-picker-indicator { padding-left: 0px; }
+                  `;
+                  document.head.appendChild(s);
+            } catch (e) {
+                  // ignore
+            }
+      })();
 
-                        const emptyCell = creadeEmptyCell();
-                        emptyCell.appendChild(dateInputCell);
-                        column.appendChild(emptyCell);
-                  } else {
-
-                        column.appendChild(creadeEmptyCell());
-                  }
-            });
-
-            const ga = document.querySelector('#gantt_area');
-            const gap = ga.parentElement;
-            table.insertBefore(column, gap);
+      // parse display dates like "Jan 21, 2025" into yyyy-mm-dd for <input type="date">
+      function parseDisplayDateToYMD(display) {
+            if (!display) return '';
+            const d = new Date(display);
+            if (isNaN(d)) return '';
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
       }
 
-      function addDueDateColumn() {
-            const table = document.querySelector('.gantt-table tbody tr');
-            if (!table) return;
+      // format yyyy-mm-dd (or Date) back to display like "Jan 21, 2025"
+      function formatYMDToDisplay(ymd) {
+            if (!ymd) return '';
+            const d = new Date(ymd);
+            if (isNaN(d)) return '';
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
 
-            const columnName = 'duedate_column';
-            if (document.querySelector('.' + columnName)) return;
-            const column = createColumn('Due Day', columnName);
+      // addStartDateColumn can accept an optional parameter to specify which elements to initialize.
+      // Parameter can be a selector string, a NodeList/Array of elements, or a single Element.
+      function addStartDateColumn(dateElemName, fieldNameToCommit) {
+            const elems = document.querySelectorAll(dateElemName);
+            elems.forEach(div => {
+                  // don't initialize twice
+                  if (div.dataset.editableAttached) return;
+                  div.dataset.editableAttached = '1';
 
-            const issueRows = table.querySelectorAll('.gantt_subjects div');
-            issueRows.forEach(row => {
-                  if (row.classList.contains('issue-subject')) {
-                        const dateInputCell = document.createElement('td');
-                        dateInputCell.classList.add('custom-column-cell');
+                  const text = div.textContent.trim();
+                  const ymd = parseDisplayDateToYMD(text);
 
-                        const dateInputFild = creadeDateInputFild();
-                        dateInputCell.appendChild(dateInputFild);
+                  // create hidden date input (keep original text unchanged)
+                  const dateInput = document.createElement('input');
+                  dateInput.type = 'date';
+                  dateInput.classList.add('custom-date-picker');
+                  dateInput.value = ymd;
+                  // always visible picker
+                  dateInput.style.display = 'inline-block';
+                  dateInput.style.border = 'none';
+                  dateInput.style.background = 'transparent';
+                  dateInput.style.fontSize = '0.8em';
+                  dateInput.style.padding = '0';
+                  dateInput.style.margin = '0';
 
-                        const issueId = row.id;
-                        if (issueId) {
-                              getIssueProperty(issueId, 'due_date').then(dueDate => {
-                                    dateInputFild.value = dueDate;
-                                    if (!dueDate) {
-                                          dateInputFild.style.backgroundColor = blueColour;
-                                          dateInputCell.style.backgroundColor = blueColour;
-                                    } else {
-                                          const dueDateObj = new Date(dueDate);
-                                          dueDateObj.setHours(0, 0, 0, 0);
-                                          const today = new Date();
-                                          today.setHours(0, 0, 0, 0);
+                  // remove the original text and append the date picker
+                  div.textContent = '';
+                  div.appendChild(dateInput);
 
-                                          if (dueDateObj < today) {
-                                                dateInputFild.style.backgroundColor = redColour;
-                                                dateInputCell.style.backgroundColor = redColour;
-                                          } else if (dueDateObj > today) {
-                                                dateInputFild.style.backgroundColor = greenColour;
-                                                dateInputCell.style.backgroundColor = greenColour;
-                                          } else {
-                                                dateInputFild.style.backgroundColor = yellowColour;
-                                                dateInputCell.style.backgroundColor = yellowColour;
-                                          }
-                                    }
-                              });
+                  // derive issue id (strip common prefixes to get numeric id)
+                  const dataCollapse = div.getAttribute('data-collapse-expand');
+                  const idAttr = div.id;
+                  let issueId = null;
+                  if (dataCollapse && dataCollapse.startsWith('issue-')) issueId = dataCollapse.replace(/^issue-/, '');
+                  else if (idAttr && idAttr.startsWith('start_date_issue_')) issueId = idAttr.replace(/^start_date_issue_/, '');
+                  else if (dataCollapse) issueId = dataCollapse;
+                  else if (idAttr) issueId = idAttr;
 
-                              dateInputFild.addEventListener('change', () => {
-                                    const selectedDate = dateInputFild.value;
-                                    updateIssueProperty(issueId, 'due_date', selectedDate);
-                              });
+                  let statusText = null;
+                  if (issueId) {
+                        let statusEl = document.getElementById(`status_issue_${issueId}`);
+                        statusText = statusEl.textContent.trim();
 
+                        // statusEl = document.querySelector(`.issue_status[data-collapse-expand="issue-${issueId}"]`);
+                        // statusText = statusEl.textContent.trim();
 
-                              getSubtasks(issueId).then(subtasks => {
-                                    if (subtasks && subtasks.length > 0) {
-                                          dateInputFild.disabled = true;
-                                    }
-                              });
+                        // statusEl = document.querySelector(`#issue-${issueId} .issue_status`);
+                        // statusText = statusEl.textContent.trim();
+                  }
+
+                  if (dateElemName.toLowerCase().includes('start')) {
+                        if (statusText && statusText.toLowerCase().startsWith('open')) {
+                              const startDateObj = new Date(text);
+                              startDateObj.setHours(0, 0, 0, 0);
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+
+                              if (isNaN(startDateObj)) {
+                                    dateInput.style.backgroundColor = blueColour;
+                              } else if (startDateObj < today) {
+                                    dateInput.style.backgroundColor = redColour;
+                              } else if (startDateObj > today) {
+                                    dateInput.style.backgroundColor = greenColour;
+                              } else {
+                                    dateInput.style.backgroundColor = yellowColour;
+                              }
                         }
-
-                        const emptyCell = creadeEmptyCell();
-                        emptyCell.appendChild(dateInputCell);
-                        column.appendChild(emptyCell);
-                  } else {
-                        column.appendChild(creadeEmptyCell());
                   }
+
+                  if (dateElemName.toLowerCase().includes('due')) {
+                        const dueDateObj = new Date(text);
+                        dueDateObj.setHours(0, 0, 0, 0);
+
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        if (isNaN(dueDateObj)) {
+                              dateInput.style.backgroundColor = blueColour;
+                        } else {
+                              if (dueDateObj < today) {
+                                    dateInput.style.backgroundColor = redColour;
+                              } else if (dueDateObj > today) {
+                                    dateInput.style.backgroundColor = greenColour;
+                              } else {
+                                    dateInput.style.backgroundColor = yellowColour;
+                              }
+                        }
+                  }
+
+                  // when value changes, call API and update title
+                  dateInput.addEventListener('change', () => {
+                        const selected = dateInput.value; // yyyy-mm-dd
+                        if (issueId) updateIssueProperty(issueId, fieldNameToCommit, selected);
+                        // update title so hover shows formatted date
+                        dateInput.parentElement.title = selected ? formatYMDToDisplay(selected) : '';
+                  });
             });
-
-            const ga = document.querySelector('#gantt_area');
-            const gap = ga.parentElement;
-            table.insertBefore(column, gap);
       }
-/*
-      function waitForTable() {
-            const checkInterval = setInterval(() => {
-                  const issueTable = document.querySelector('#content table.issues');
-                  if (issueTable) {
-                        clearInterval(checkInterval);
-                        addDueDateColumn();
-                        addStartDateColumn()
-                  }
-            }, 500);
-      }*/
-/*
-      // Run after page load
-      window.addEventListener('load', addStartDateColumn);
-      window.addEventListener('load', addDueDateColumn);
-
-      const observerStartDate = new MutationObserver(addStartDateColumn);
-      observerStartDate.observe(document.body, { childList: true, subtree: true });
-
-      const observerDueDate = new MutationObserver(addDueDateColumn);
-      observerDueDate.observe(document.body, { childList: true, subtree: true });*/
 
       function init() {
-    const table = document.querySelector('.gantt-table tbody tr');
-    if (!table) return;
+            const table = document.querySelector('.gantt-table tbody tr');
+            if (!table) return;
+            addStartDateColumn('.issue_start_date', 'start_date');
+            addStartDateColumn('.issue_due_date', 'due_date');
+      }
 
-    addStartDateColumn();
-    addDueDateColumn();
-  }
-
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    init();
-  } else {
-    document.addEventListener('DOMContentLoaded', init);
-  }
-
-
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            init();
+      } else {
+            document.addEventListener('DOMContentLoaded', init);
+      }
 })();
