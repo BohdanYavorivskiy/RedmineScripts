@@ -169,20 +169,68 @@ function fetchIssue(issueId) {
             });
 }
 
+async function getIssueDataCached(issueKey) {
+      // Simple in-memory cache + in-flight dedupe for issue data. We only store
+      // the `issue` object from the Redmine response.
+      const issueId = String(issueKey);
+
+      // lazy caches
+      if (typeof window._getIssueDataCache === 'undefined') window._getIssueDataCache = new Map();
+      if (typeof window._getIssueDataPromises === 'undefined') window._getIssueDataPromises = new Map();
+
+      const cache = window._getIssueDataCache;
+      const pending = window._getIssueDataPromises;
+
+      if (cache.has(issueId)) {
+            console.debug('cache hit for', issueId);
+            return cache.get(issueId);
+      }
+
+      if (pending.has(issueId)) {
+            console.debug('Awaiting by cache', issueId);
+            return pending.get(issueId);
+      }
+
+      const p = (async () => {
+            try {
+                  const url = `${REDMINE_URL}/issues/${issueId}.json?key=${API_KEY}`;
+                  const resp = await fetch(url);
+                  if (!resp.ok) {
+                        return null;
+                  }
+
+                  const data = await resp.json();
+                  if (data && data.issue) {
+                        cache.set(issueId, data.issue);
+                        console.debug('get from SRVER issue', issueId);
+                        return data.issue;
+                  }
+                  return null;
+            } catch (err) {
+                  return null;
+            } finally {
+                  pending.delete(issueId);
+            }
+      })();
+
+      pending.set(issueId, p);
+      return p;
+}
+
 function findTopParent(issueId) {
-      return getIssueData(issueId)
+      return getIssueDataCached(issueId)
             .then(data => {
-                  const issue = data.issue;
-                  if (issue.parent) {
-                        console.log(`Issue ${issue.id} has parent ${issue.parent.id}`);
-                        return findTopParent(issue.parent.id); // Recursive call
+                  if (data.parent) {
+                        // console.log(`Issue ${data.id} has parent ${data.parent.id}`);
+                        return findTopParent(data.parent.id); // Recursive call
                   } else {
-                        console.log(`Top-most parent (Epic?):`, issue);
-                        return issue;
+                        // console.log(`Top-most parent (Epic?):`, issue);
+                        return data;
                   }
             })
             .catch(error => console.error("Error:", error));
 }
+
 async function updateIssueProperty(issueKey, jsonKey, value) {
 
       const issueId = issueKey.replace("issue-", "");
