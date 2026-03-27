@@ -18,7 +18,7 @@
       'use strict';
 
       const releaseTextMark = 'r';
-      const currentReleaseVersion = '6.53.001';
+      const currentReleaseVersion = '6.54.001';
 
       const redFullColour = '#ff0000';
 
