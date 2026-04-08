@@ -52,6 +52,7 @@
             "[20to32] - 20-pin to 32-pin adapter for SLG4688X",
             "[LLA] - Logic Level Adapter (LVPAK)",
             "[PPP] - PowerPAK Development Platform",
+            "[Motortester] - motortester for BLDC PAK SLG47125",
             "[UdevRule] - tag for VID/PID to be written on Linux Systems",
 
             // Demo
