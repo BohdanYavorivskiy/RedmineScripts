@@ -17,6 +17,12 @@
       'use strict';
 
       const values = [
+            //Change log
+            "[ExtChangelog] Add support for feature X",
+            "[EngChangelog] Update NVM programming flow",
+            "[DetailsChangelog] Fix regmap bit handling after update",
+
+            //General
             "[HWSupport] - used for parents related to the Hardware Support of the new part number/development platform",
             "[Lock] - issues related to chip's locks",
             "[Detect] - all issues related to chip detection",
@@ -163,11 +169,6 @@
             "[PMonitor] - Power monitor",
             "[DACTool] - DAC Tool related issues (FPGA Advanced Development Platform)",
             "[FlashProg] - Flash Programmer",
-
-            //Change log
-            "[ExtChangelog] Add support for feature X",
-            "[EngChangelog] Update NVM programming flow",
-            ["DetailsChangelog] Fix regmap bit handling after update"
       ];
 
 
