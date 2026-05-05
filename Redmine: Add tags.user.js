@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: Add tags selector
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Add tags setector near Issue Subject fild
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -162,7 +162,12 @@
             "[VMonitor] - Voltage monitor",
             "[PMonitor] - Power monitor",
             "[DACTool] - DAC Tool related issues (FPGA Advanced Development Platform)",
-            "[FlashProg] - Flash Programmer"
+            "[FlashProg] - Flash Programmer",
+
+            //Change log
+            "[ExtChangelog] Add support for feature X",
+            "[EngChangelog] Update NVM programming flow",
+            ["DetailsChangelog] Fix regmap bit handling after update"
       ];
 
 
