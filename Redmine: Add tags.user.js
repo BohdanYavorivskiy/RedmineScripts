@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: Add tags selector
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.6
 // @description  Add tags setector near Issue Subject fild
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -175,126 +175,129 @@
       function addTagsPicker() {
             // Try to find the issue subject input even if the Gantt table isn't present.
             const issueSubjectInput = document.getElementById('issue_subject') || document.querySelector('input[name="issue[subject]"]');
-            if (issueSubjectInput) {
-                  // Avoid adding the picker more than once
-                  if (!document.getElementById('issue_subject_picker')) {
-                        const picker = document.createElement('select');
-                        picker.id = 'issue_subject_picker';
-                        picker.setAttribute('aria-label', 'Issue subject quick pick');
-
-                        // Add a small search field to filter options
-                        const search = document.createElement('input');
-                        search.type = 'search';
-                        search.id = 'issue_subject_picker_search';
-                        search.placeholder = 'search tags...';
-                        search.style.marginRight = '6px';
-                        search.style.minWidth = '160px';
-                        search.style.padding = '2px 6px';
-                        // Insert search before the picker (place search immediately after the subject input,
-                        // then place the picker after the search). This ensures the search appears on the left.
-                        try {
-                              issueSubjectInput.insertAdjacentElement('afterend', search);
-                              search.insertAdjacentElement('afterend', picker);
-                        } catch (e) {
-                              // fallback: append to parent in correct left-to-right order
-                              if (issueSubjectInput.parentNode) {
-                                    issueSubjectInput.parentNode.appendChild(search);
-                                    issueSubjectInput.parentNode.appendChild(picker);
-                              }
-                        }
-
-                        // Helper to (re)populate select options based on a filter string
-                        function populateOptions(filter) {
-                              // clear existing
-                              while (picker.firstChild) picker.removeChild(picker.firstChild);
-                              const defaultOpt = document.createElement('option');
-                              defaultOpt.value = '';
-                              defaultOpt.textContent = '-- select tags --';
-                              picker.appendChild(defaultOpt);
-
-                              const q = (filter || '').toLowerCase().trim();
-                              values.forEach(val => {
-                                    if (!q || val.toLowerCase().indexOf(q) !== -1) {
-                                          const opt = document.createElement('option');
-                                          opt.value = val;
-                                          opt.textContent = val;
-                                          picker.appendChild(opt);
-                                    }
-                              });
-                        }
-
-                        // initial population
-                        populateOptions('');
-
-                        // Wire search to update options live
-                        search.addEventListener('input', () => populateOptions(search.value));
-                        // Pressing Enter in search selects first non-empty option (if any)
-                        search.addEventListener('keydown', (e) => {
-                              if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    if (picker.options.length > 1) {
-                                          picker.selectedIndex = 1;
-                                          picker.dispatchEvent(new Event('change', { bubbles: true }));
-                                    }
-                              }
-                        });
-
-                        // When picker changes, insert the selected value inside square brackets
-                        picker.addEventListener('change', () => {
-
-                              const match = picker.value.match(/\[(.*?)\]/);
-                              const val = match ? match[1] : null;
-
-                              if (!val) return;
-
-                              const original = issueSubjectInput.value || '';
-
-                              // If the value is already present in brackets, do nothing
-                              if (original.indexOf('[' + val + ']') !== -1) {
-                                    // still dispatch events so other listeners can react
-                                    issueSubjectInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                    issueSubjectInput.dispatchEvent(new Event('change', { bubbles: true }));
-                                    return;
-                              }
-
-                              // Find leading bracket block(s) like "[111][222] "
-                              const m = original.match(/^(\s*(?:\[[^\]]*\])+)\s*(.*)$/);
-                              if (m) {
-                                    // m[1] = existing bracket sequence, m[2] = rest of the text
-                                    const brackets = m[1].trim();
-                                    const rest = m[2] || '';
-                                    issueSubjectInput.value = brackets + '[' + val + '] ' + rest;
-                              } else {
-                                    // No existing brackets — prepend the new one
-                                    issueSubjectInput.value = '[' + val + '] ' + original;
-                              }
-
-                              // Trigger input/change events so the page notices the update
-                              issueSubjectInput.dispatchEvent(new Event('input', { bubbles: true }));
-                              issueSubjectInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        });
-
-                        // picker (and search) were already inserted above next to the subject input.
-                        // No further insertion here to avoid reordering the elements.
-                  }
-            } else {
-                  console.log('No #issue_subject input found on this page.');
+            if (!issueSubjectInput) {
+                  return;
             }
+
+            // If a picker already exists AND it is still attached right after the
+            // current subject input, nothing to do. Otherwise (re)create it.
+            const existingPicker = document.getElementById('issue_subject_picker');
+            if (existingPicker && existingPicker.isConnected &&
+                  issueSubjectInput.isConnected &&
+                  document.contains(issueSubjectInput) &&
+                  existingPicker.dataset.boundInput === issueSubjectInput.id + issueSubjectInput.name) {
+                  return;
+            }
+
+            // Clean up any stale picker/search left over from a previous render.
+            if (existingPicker) existingPicker.remove();
+            const staleSearch = document.getElementById('issue_subject_picker_search');
+            if (staleSearch) staleSearch.remove();
+
+            const picker = document.createElement('select');
+            picker.id = 'issue_subject_picker';
+            picker.setAttribute('aria-label', 'Issue subject quick pick');
+            // Mark which input this picker is bound to, so we can detect re-renders.
+            picker.dataset.boundInput = issueSubjectInput.id + issueSubjectInput.name;
+
+            // Add a small search field to filter options
+            const search = document.createElement('input');
+            search.type = 'search';
+            search.id = 'issue_subject_picker_search';
+            search.placeholder = 'search tags...';
+            search.style.marginRight = '6px';
+            search.style.minWidth = '160px';
+            search.style.padding = '2px 6px';
+
+            try {
+                  issueSubjectInput.insertAdjacentElement('afterend', search);
+                  search.insertAdjacentElement('afterend', picker);
+            } catch (e) {
+                  if (issueSubjectInput.parentNode) {
+                        issueSubjectInput.parentNode.appendChild(search);
+                        issueSubjectInput.parentNode.appendChild(picker);
+                  }
+            }
+
+            function populateOptions(filter) {
+                  while (picker.firstChild) picker.removeChild(picker.firstChild);
+                  const defaultOpt = document.createElement('option');
+                  defaultOpt.value = '';
+                  defaultOpt.textContent = '-- select tags --';
+                  picker.appendChild(defaultOpt);
+
+                  const q = (filter || '').toLowerCase().trim();
+                  values.forEach(val => {
+                        if (!q || val.toLowerCase().indexOf(q) !== -1) {
+                              const opt = document.createElement('option');
+                              opt.value = val;
+                              opt.textContent = val;
+                              picker.appendChild(opt);
+                        }
+                  });
+            }
+
+            populateOptions('');
+
+            search.addEventListener('input', () => populateOptions(search.value));
+            search.addEventListener('keydown', (e) => {
+                  if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (picker.options.length > 1) {
+                              picker.selectedIndex = 1;
+                              picker.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                  }
+            });
+
+            picker.addEventListener('change', () => {
+                  const match = picker.value.match(/\[(.*?)\]/);
+                  const val = match ? match[1] : null;
+                  if (!val) return;
+
+                  const original = issueSubjectInput.value || '';
+
+                  if (original.indexOf('[' + val + ']') !== -1) {
+                        issueSubjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        issueSubjectInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        return;
+                  }
+
+                  const m = original.match(/^(\s*(?:\[[^\]]*\])+)\s*(.*)$/);
+                  if (m) {
+                        const brackets = m[1].trim();
+                        const rest = m[2] || '';
+                        issueSubjectInput.value = brackets + '[' + val + '] ' + rest;
+                  } else {
+                        issueSubjectInput.value = '[' + val + '] ' + original;
+                  }
+
+                  issueSubjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+                  issueSubjectInput.dispatchEvent(new Event('change', { bubbles: true }));
+            });
       }
 
 
-  // Handle Redmine navigation frameworks
+      // ---- Robust bootstrapping / observation ----
 
+      // Run immediately (document-idle means DOM is usually ready), and also on
+      // DOMContentLoaded in case we somehow ran earlier.
+      addTagsPicker();
   document.addEventListener('DOMContentLoaded', addTagsPicker);
+      window.addEventListener('load', addTagsPicker);
 
-  // Fallback: observe dynamic form creation
-  const obs = new MutationObserver(() => addTagsPicker());
-  obs.observe(document.body, { childList: true, subtree: true });
+      // Debounced observer so we don't hammer addTagsPicker on every mutation and
+      // don't get stuck in feedback loops caused by our own inserts.
+      let scheduled = false;
+      const obs = new MutationObserver(() => {
+            if (scheduled) return;
+            scheduled = true;
+            // Disconnect while we mutate so our inserts don't retrigger the observer.
+            requestAnimationFrame(() => {
+                  scheduled = false;
+                  addTagsPicker();
+            });
+      });
+      obs.observe(document.documentElement, { childList: true, subtree: true });
 
-/*
-      if (document.readyState === 'complete') {
-            addTagsPicker();
-      } else {
-            window.addEventListener('load', addTagsPicker);
-      }*/
 })();
