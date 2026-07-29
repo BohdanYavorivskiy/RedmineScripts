@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Gantt: UI Datepicker Overlay + Overdue Coloring
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Hides sidebar; for each .issue_start_date / .issue_due_date, opens jQuery UI datepicker as an overlay. Allows month switching with no "Missing instance data". Colors overdue due dates in red.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -104,7 +104,7 @@ function hideSidebar() {
   function init() {
     const table = document.querySelector('.gantt-table tbody tr');
     const existing = document.querySelector('.igantt-sidebar-rows');
-    if (!table || !existing) return;
+    if (!table && !existing) return;
 
 
     injectDatepickerOverlayCSS();
