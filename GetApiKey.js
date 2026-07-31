@@ -217,6 +217,102 @@ async function getIssueDataCached(issueKey) {
       return p;
 }
 
+////////////////////////Active epics (grouped by target)///////////////////////
+
+// Fetch all active (open) Epics of a project, grouped by their target version.
+// Reusable across userscripts via window. Results are cached on window and
+// in-flight requests are deduped to minimise API calls. Each fetched epic is
+// also seeded into the shared issue cache used by getIssueDataCached().
+//
+//   window.getActiveEpicsGrouped(projectId, { trackerId, noTargetLabel, force })
+//     -> Promise<[{ target, epics: [{ id, subject }] }]>
+async function getActiveEpicsGrouped(projectId, options) {
+      const opts = options || {};
+      const trackerId = opts.trackerId || 5; // "Epic" tracker id
+      const noTargetLabel = opts.noTargetLabel || 'No target';
+      const cacheKey = `${projectId}|${trackerId}`;
+
+      // lazy caches on window (shared across scripts)
+      if (typeof window._epicsGroupedCache === 'undefined') window._epicsGroupedCache = new Map();
+      if (typeof window._epicsGroupedPromises === 'undefined') window._epicsGroupedPromises = new Map();
+
+      const cache = window._epicsGroupedCache;
+      const pending = window._epicsGroupedPromises;
+
+      if (!opts.force && cache.has(cacheKey)) {
+            return cache.get(cacheKey);
+      }
+      if (pending.has(cacheKey)) {
+            return pending.get(cacheKey);
+      }
+
+      // Seed the shared issue cache so later getIssueDataCached() calls are free.
+      if (typeof window._getIssueDataCache === 'undefined') window._getIssueDataCache = new Map();
+      const issueCache = window._getIssueDataCache;
+
+      const p = (async () => {
+            try {
+                  const epics = [];
+                  const pageSize = 200;
+                  let offset = 0;
+                  let total = Infinity;
+
+                  while (offset < total) {
+                        const url = `${REDMINE_URL}/projects/${projectId}/issues.json` +
+                              `?tracker_id=${trackerId}&status_id=open` +
+                              `&limit=${pageSize}&offset=${offset}`;
+                        const resp = await fetch(url, { headers: { 'X-Redmine-API-Key': API_KEY } });
+                        if (!resp.ok) throw new Error(`HTTP ${resp.status} fetching epics`);
+                        const data = await resp.json();
+                        total = typeof data.total_count === 'number' ? data.total_count : (data.issues || []).length;
+                        (data.issues || []).forEach(issue => {
+                              // Seed shared cache to avoid re-fetching this issue later.
+                              issueCache.set(String(issue.id), issue);
+                              epics.push({
+                                    id: issue.id,
+                                    subject: issue.subject || '',
+                                    target: (issue.fixed_version && issue.fixed_version.name) || noTargetLabel,
+                              });
+                        });
+                        if (!data.issues || data.issues.length === 0) break;
+                        offset += pageSize;
+                  }
+
+                  // Group by target, then sort groups + epics for a stable UI.
+                  const byTarget = new Map();
+                  epics.forEach(epic => {
+                        if (!byTarget.has(epic.target)) byTarget.set(epic.target, []);
+                        byTarget.get(epic.target).push({ id: epic.id, subject: epic.subject });
+                  });
+
+                  const groups = Array.from(byTarget.entries()).map(([target, list]) => ({
+                        target,
+                        epics: list.sort((a, b) => a.id - b.id),
+                  }));
+                  groups.sort((a, b) => {
+                        if (a.target === noTargetLabel) return 1;
+                        if (b.target === noTargetLabel) return -1;
+                        return a.target.localeCompare(b.target);
+                  });
+
+                  cache.set(cacheKey, groups);
+                  return groups;
+            } catch (err) {
+                  console.error('Error fetching active epics:', err);
+                  return [];
+            } finally {
+                  pending.delete(cacheKey);
+            }
+      })();
+
+      pending.set(cacheKey, p);
+      return p;
+}
+
+// Expose shared Redmine API helpers for other userscripts.
+window.REDMINE_URL = REDMINE_URL;
+window.getActiveEpicsGrouped = getActiveEpicsGrouped;
+
 function findTopParent(issueId) {
       return getIssueDataCached(issueId)
             .then(data => {
