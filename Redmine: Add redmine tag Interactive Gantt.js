@@ -21,14 +21,7 @@
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    const BASE_URL              = window.location.origin;
-    const releaseTextMark       = 'r';
-    const currentReleaseVersion = '6.55.001';
-
-    const redFullColour = '#ff0000';
-    const redColour     = '#ff6666b5';
-    const blueColour    = '#70b1ff82';
-    const greenColour   = '#aee678c4';
+    const BASE_URL = window.location.origin;
 
     // Tags column is the 4th .igantt-column-cell inside each row (0-based index 3)
     const TAGS_CELL_INDEX = 0;
@@ -54,10 +47,8 @@
 
     // ── Caches ────────────────────────────────────────────────────────────────
 
-    const issueCache       = new Map(); // issueId → Promise<issue>
-    const tagsCache        = new Map(); // issueId → string[]
-    const epicCache        = new Map(); // issueId → Promise<issue>
-    const processedRelease = new Set(); // issueIds whose release span was inserted
+    const issueCache = new Map(); // issueId → Promise<issue>
+    const tagsCache = new Map(); // issueId → string[]
 
     // ── API helpers ───────────────────────────────────────────────────────────
 
@@ -79,34 +70,10 @@
         return promise;
     }
 
-    async function findTopParent(issueId) {
-        if (epicCache.has(issueId)) return epicCache.get(issueId);
-
-        const promise = (async () => {
-            let current = await fetchIssue(issueId);
-            if (!current) return null;
-
-            while (current.parent?.id) {
-                const parent = await fetchIssue(current.parent.id);
-                if (!parent) break;
-                current = parent;
-                if (current.tracker?.id === 5) break; // Epic found
-            }
-            return current;
-        })();
-
-        epicCache.set(issueId, promise);
-        return promise;
-    }
-
     // ── DOM helpers ───────────────────────────────────────────────────────────
 
     function extractIssueId(rowEl) {
         return rowEl.dataset.id || null;
-    }
-
-    function getSubjectContent(rowEl) {
-        return rowEl.querySelector('.igantt-subject-content');
     }
 
     function getTagsCell(rowEl) {
@@ -142,13 +109,6 @@
                 overflow: hidden;
                 white-space: nowrap;
             }
-            @keyframes flicker {
-                0%   { transform: scale(1) rotate(-1deg); opacity: 0.9; }
-                25%  { transform: scale(1.05) rotate(1deg); opacity: 1; }
-                50%  { transform: scale(0.95) rotate(-1deg); opacity: 0.85; }
-                75%  { transform: scale(1.05) rotate(2deg); opacity: 0.95; }
-                100% { transform: scale(1) rotate(-1deg); opacity: 0.9; }
-            }
         `;
         document.head.appendChild(style);
     }
@@ -177,57 +137,6 @@
         tagsCell.appendChild(fragment);
     }
 
-    // ── Release-tag span (subject column) ────────────────────────────────────
-
-    function versionToNumber(version) {
-        return parseInt(version.replace(/\./g, ''), 10);
-    }
-
-    function createEpicSpan(epicData) {
-        const span = document.createElement('span');
-        let text = releaseTextMark;
-
-        if (epicData?.tracker?.id === 5) {
-            const releaseText = epicData.subject.match(/\b\d+\.\d+\.\d+\b/g);
-            const isHotfix    = epicData.subject.includes('Hotfixes');
-
-            if (isHotfix) {
-                span.style.color      = redFullColour;
-                span.style.display    = 'inline-block';
-                span.style.fontWeight = 'bold';
-                span.style.animation  = 'flicker 0.5s infinite';
-            }
-
-            if (releaseText) {
-                text = releaseText[0];
-                const releaseId = versionToNumber(releaseText[0]);
-                const currentId = versionToNumber(currentReleaseVersion);
-                if (releaseId === currentId)    span.style.backgroundColor = greenColour;
-                else if (releaseId > currentId) span.style.backgroundColor = blueColour;
-                else                            span.style.backgroundColor = redColour;
-            } else {
-                text += 'NO TAG';
-                span.style.backgroundColor = redFullColour;
-            }
-        } else {
-            text += 'NO EPIC';
-            span.style.backgroundColor = redFullColour;
-        }
-
-        span.textContent = text;
-        return span;
-    }
-
-    function insertReleaseSpan(issueId, epicData) {
-        const row = currentRowById(issueId);
-        if (!row) return;
-        const target = getSubjectContent(row);
-        if (!target || target.querySelector('.igantt-release-tag')) return;
-        const span = createEpicSpan(epicData);
-        span.classList.add('igantt-release-tag');
-        target.insertBefore(span, target.firstChild);
-    }
-
     // ── Row processing ────────────────────────────────────────────────────────
 
     function processIssueRow(rowEl) {
@@ -247,20 +156,6 @@
                 if (tagsCell) renderTagsInCell(tagsCell, tagNames);
             });
         }
-
-        // ── Release tag in subject ───────────────────────────────────────────
-        if (processedRelease.has(issueId)) {
-            // Row was recycled by virtual scroller — re-insert from cached promise
-            epicCache.get(issueId)?.then(epicData => {
-                if (epicData) insertReleaseSpan(issueId, epicData);
-            });
-            return;
-        }
-
-        processedRelease.add(issueId);
-        findTopParent(issueId).then(epicData => {
-            if (epicData) insertReleaseSpan(issueId, epicData);
-        });
     }
 
     // ── Observer setup ────────────────────────────────────────────────────────
