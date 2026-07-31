@@ -9,16 +9,14 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 
-// Shared API helpers (must load first — the feature scripts depend on it)
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/GetApiKey.js
 
-// Feature scripts
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20release%20tag.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%20Gantt%3A%20Add%20start%20and%20due%20dates%20to%20gant.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%20Gantt%3A%20jQuery%20UI%20Datepicker%20Overlay%20%2B%20Overdue%20Coloring.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20btn%20to%20fit%20task%20to%20impl%20part.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20btn%20to%20testing.user.js
-// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20parent%20task%20suggestion.user.js
+// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20parent%20task%20suggestion.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20redmine%20tag%20Interactive%20Gantt.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20tags.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Highlite%20time.user.js
