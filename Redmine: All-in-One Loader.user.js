@@ -17,7 +17,7 @@
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20btn%20to%20fit%20task%20to%20impl%20part.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20btn%20to%20testing.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20parent%20task%20suggestion.js
-// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20redmine%20tag%20Interactive%20Gantt.user.js
+// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20redmine%20tag%20Interactive%20Gantt.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20tags.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Highlite%20time.user.js
 
