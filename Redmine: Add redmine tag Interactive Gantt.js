@@ -21,7 +21,11 @@
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    const BASE_URL = window.location.origin;
+    // Use the shared Redmine base URL / API key exposed by GetApiKey.js,
+    // falling back to the current origin if it is not available.
+    const BASE_URL = (typeof REDMINE_URL !== 'undefined' && REDMINE_URL) ||
+        (typeof window !== 'undefined' && window.REDMINE_URL) ||
+        window.location.origin;
 
     // Tags column is the 4th .igantt-column-cell inside each row (0-based index 3)
     const TAGS_CELL_INDEX = 0;
@@ -55,10 +59,15 @@
     function fetchIssue(issueId) {
         if (issueCache.has(issueId)) return issueCache.get(issueId);
 
-        const apiKey = typeof getRedmineApiKey === 'function' ? getRedmineApiKey() : null;
+        // API_KEY is provided by the required GetApiKey.js userscript.
+        const apiKey = typeof API_KEY !== 'undefined' ? API_KEY : null;
         const headers = apiKey ? { 'X-Redmine-API-Key': apiKey } : {};
 
-        const promise = fetch(`${BASE_URL}/issues/${issueId}.json?include=tags`, { headers })
+        const url = apiKey
+            ? `${BASE_URL}/issues/${issueId}.json?include=tags&key=${apiKey}`
+            : `${BASE_URL}/issues/${issueId}.json?include=tags`;
+
+        const promise = fetch(url, { headers })
             .then(r => r.ok ? r.json() : Promise.reject(r.status))
             .then(data => data.issue)
             .catch(err => {
