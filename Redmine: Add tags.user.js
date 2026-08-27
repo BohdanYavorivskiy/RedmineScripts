@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: Add tags selector
 // @namespace    http://tampermonkey.net/
-// @version      1.0.6
+// @version      1.0.7
 // @description  Add tags setector near Issue Subject fild
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -23,6 +23,15 @@
             "[DetailsChangelog] Fix regmap bit handling after update",
 
             //General
+            "[Request]",
+            "[Improvement] - for new additional functionality for existing features",
+            "[NewFeature] - for new features description",
+            "[Refactoring] - for internal restructuziation/updates",
+            "[Goal] - tag for tasks related to year goals",
+            "[CustomerReport] - for tasks involving addressing questions or issues submitted by customers",
+            "[Experimental] - for tasks related to experimental changes that are intended for internal usage; may be used for experimental builds",
+
+            //General hw
             "[HWSupport] - used for parents related to the Hardware Support of the new part number/development platform",
             "[Lock] - issues related to chip's locks",
             "[Detect] - all issues related to chip detection",
