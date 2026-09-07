@@ -20,7 +20,7 @@
       // ── Shared config ─────────────────────────────────────────────────────────
 
       const releaseTagClass = 'redmine-release-tag';
-      const currentReleaseVersion = '6.55.001';
+      const currentReleaseVersion = '6.56.001';
 
       const redFullColour = '#ff0000';
       const redColour = '#ff6666b5';
