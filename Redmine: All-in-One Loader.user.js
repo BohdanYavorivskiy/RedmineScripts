@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: All-in-One Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.4
 // @description  Single loader that bundles every Redmine userscript via @require. Install only this one to get all features.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
