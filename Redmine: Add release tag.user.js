@@ -45,8 +45,6 @@
                   const releaseText = targetName.match(/\b\d+\.\d+\.\d+\b/g);
                   const isHotfix = targetName.includes('Hotfixes') || epicData.subject.includes('Hotfixes');
 
-                  if (isHotfix) applyHotfixStyles(span);
-
                   if (releaseText) {
                         fullText = formatReleaseText(releaseText[0]);
                         applyReleaseColor(span, releaseText[0]);
@@ -54,6 +52,9 @@
                         fullText = 'NO TAG';
                         span.style.backgroundColor = redFullColour;
                   }
+
+                  // After the release colour so the hard-freeze background wins
+                  if (isHotfix) applyHotfixStyles(span, detectFreezeType(`${epicData.subject} ${targetName}`));
             } else {
                   fullText = 'NO EPIC';
                   span.style.backgroundColor = redFullColour;
@@ -75,11 +76,30 @@
             return `${minor}.${patch}`;
       }
 
-      function applyHotfixStyles(span) {
-            span.style.color = redFullColour;
+      /**
+       * Detect the freeze type from epic text. Only an explicit "soft" keeps
+       * the regular hotfix look; "hard" or nothing found is treated as hard.
+       */
+      function detectFreezeType(text) {
+            const t = text.toLowerCase();
+            const isHard = /hard|хард/.test(t);
+            const isSoft = /soft|софт/.test(t);
+            return isSoft && !isHard ? 'soft' : 'hard';
+      }
+
+      function applyHotfixStyles(span, freezeType) {
             span.style.display = 'inline-block';
             span.style.fontWeight = 'bold';
-            span.style.animation = 'flicker 0.5s infinite';
+            if (freezeType === 'hard') {
+                  span.style.color = '#ffffff';
+                  span.style.backgroundColor = redFullColour;
+                  span.style.padding = '0 3px';
+                  span.style.borderRadius = '3px';
+                  span.style.animation = 'flickerHard 0.3s infinite';
+            } else {
+                  span.style.color = redFullColour;
+                  span.style.animation = 'flicker 0.5s infinite';
+            }
             injectFlickerAnimation();
       }
 
@@ -95,6 +115,11 @@
             50%  { transform: scale(0.95) rotate(-1deg); opacity: 0.85; }
             75%  { transform: scale(1.05) rotate(2deg); opacity: 0.95; }
             100% { transform: scale(1) rotate(-1deg); opacity: 0.9; }
+        }
+        @keyframes flickerHard {
+            0%   { transform: scale(1) rotate(-1deg); opacity: 1; box-shadow: 0 0 4px 1px #ff0000; }
+            50%  { transform: scale(1.12) rotate(1deg); opacity: 0.7; box-shadow: 0 0 12px 4px #ff0000; }
+            100% { transform: scale(1) rotate(-1deg); opacity: 1; box-shadow: 0 0 4px 1px #ff0000; }
         }
     `;
             document.head.appendChild(style);
