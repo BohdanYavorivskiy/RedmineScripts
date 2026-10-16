@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Gantt: Add release tag
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.1.0
 // @description  Takes a release version from epic and draws it on the classic Gantt diagram and the Interactive Gantt sidebar
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
