@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Gantt: Add release tag
 // @namespace    http://tampermonkey.net/
-// @version      2.1.0
+// @version      2.2.0
 // @description  Takes a release version from epic and draws it on the classic Gantt diagram and the Interactive Gantt sidebar
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -20,7 +20,9 @@
       // ── Shared config ─────────────────────────────────────────────────────────
 
       const releaseTagClass = 'redmine-release-tag';
-      const currentReleaseVersion = '6.56.001';
+      // Fallback, overwritten by loadCurrentRelease() when versions are fetched.
+      let currentReleaseVersion = '6.00.000';
+      const RELEASE_PROJECT_ID = 'go-configure-software';
 
       const redFullColour = '#ff0000';
       const redColour = '#ff6666b5';
@@ -33,6 +35,37 @@
       function versionToNumber(versions) {
             return parseInt(versions.replace(/\./g, ''), 10);
       }
+
+      /**
+       * Current release = the upcoming one: the version with a release number
+       * whose due date is nearest to today (today or later). Older numbers
+       * count as past, newer ones as future.
+       */
+      async function loadCurrentRelease() {
+            try {
+                  const resp = await fetch(
+                        `${window.REDMINE_URL}/projects/${RELEASE_PROJECT_ID}/versions.json`,
+                        { headers: { 'X-Redmine-API-Key': API_KEY } }
+                  );
+                  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                  const { versions = [] } = await resp.json();
+
+                  const now = new Date();
+                  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                  const upcoming = versions
+                        .map(v => ({ number: (v.name || '').match(/\b\d+\.\d+\.\d+\b/)?.[0], due: v.due_date }))
+                        .filter(v => v.number && v.due && v.due >= today)
+                        .sort((a, b) => a.due.localeCompare(b.due) || versionToNumber(a.number) - versionToNumber(b.number));
+                  if (upcoming.length === 0) return;
+
+                  currentReleaseVersion = upcoming[0].number;
+            } catch (err) {
+                  console.warn('Could not detect current release, using fallback', currentReleaseVersion, err);
+            }
+      }
+
+      const currentReleaseReady = loadCurrentRelease();
 
       function createEpicSpan(epicData) {
             const span = document.createElement('span');
@@ -155,7 +188,7 @@
             const issueId = extractClassicIssueId(row.id);
             if (!issueId || row.querySelector(`.${releaseTagClass}`)) return;
 
-            findTopParent(issueId).then(epicData => {
+            Promise.all([findTopParent(issueId), currentReleaseReady]).then(([epicData]) => {
                   if (!epicData?.id) return;
 
                   const span = createEpicSpan(epicData);
@@ -203,7 +236,7 @@
 
             processedIds.add(issueId);
 
-            findTopParent(issueId).then(epicData => {
+            Promise.all([findTopParent(issueId), currentReleaseReady]).then(([epicData]) => {
                   if (!epicData?.id) return;
 
                   // Re-query the subject content — the row may have been recycled
