@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Gantt: Add release tag
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.2.0
 // @description  Takes a release version from epic and draws it on the classic Gantt diagram and the Interactive Gantt sidebar
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -20,7 +20,9 @@
       // ── Shared config ─────────────────────────────────────────────────────────
 
       const releaseTagClass = 'redmine-release-tag';
-      const currentReleaseVersion = '6.56.001';
+      // Fallback, overwritten by loadCurrentRelease() when versions are fetched.
+      let currentReleaseVersion = '6.00.000';
+      const RELEASE_PROJECT_ID = 'go-configure-software';
 
       const redFullColour = '#ff0000';
       const redColour = '#ff6666b5';
@@ -34,6 +36,37 @@
             return parseInt(versions.replace(/\./g, ''), 10);
       }
 
+      /**
+       * Current release = the upcoming one: the version with a release number
+       * whose due date is nearest to today (today or later). Older numbers
+       * count as past, newer ones as future.
+       */
+      async function loadCurrentRelease() {
+            try {
+                  const resp = await fetch(
+                        `${window.REDMINE_URL}/projects/${RELEASE_PROJECT_ID}/versions.json`,
+                        { headers: { 'X-Redmine-API-Key': API_KEY } }
+                  );
+                  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                  const { versions = [] } = await resp.json();
+
+                  const now = new Date();
+                  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                  const upcoming = versions
+                        .map(v => ({ number: (v.name || '').match(/\b\d+\.\d+\.\d+\b/)?.[0], due: v.due_date }))
+                        .filter(v => v.number && v.due && v.due >= today)
+                        .sort((a, b) => a.due.localeCompare(b.due) || versionToNumber(a.number) - versionToNumber(b.number));
+                  if (upcoming.length === 0) return;
+
+                  currentReleaseVersion = upcoming[0].number;
+            } catch (err) {
+                  console.warn('Could not detect current release, using fallback', currentReleaseVersion, err);
+            }
+      }
+
+      const currentReleaseReady = loadCurrentRelease();
+
       function createEpicSpan(epicData) {
             const span = document.createElement('span');
             span.classList.add(releaseTagClass);
@@ -45,8 +78,6 @@
                   const releaseText = targetName.match(/\b\d+\.\d+\.\d+\b/g);
                   const isHotfix = targetName.includes('Hotfixes') || epicData.subject.includes('Hotfixes');
 
-                  if (isHotfix) applyHotfixStyles(span);
-
                   if (releaseText) {
                         fullText = formatReleaseText(releaseText[0]);
                         applyReleaseColor(span, releaseText[0]);
@@ -54,6 +85,9 @@
                         fullText = 'NO TAG';
                         span.style.backgroundColor = redFullColour;
                   }
+
+                  // After the release colour so the hard-freeze background wins
+                  if (isHotfix) applyHotfixStyles(span, detectFreezeType(`${epicData.subject} ${targetName}`));
             } else {
                   fullText = 'NO EPIC';
                   span.style.backgroundColor = redFullColour;
@@ -75,11 +109,30 @@
             return `${minor}.${patch}`;
       }
 
-      function applyHotfixStyles(span) {
-            span.style.color = redFullColour;
+      /**
+       * Detect the freeze type from epic text. Only an explicit "soft" keeps
+       * the regular hotfix look; "hard" or nothing found is treated as hard.
+       */
+      function detectFreezeType(text) {
+            const t = text.toLowerCase();
+            const isHard = /hard|хард/.test(t);
+            const isSoft = /soft|софт/.test(t);
+            return isSoft && !isHard ? 'soft' : 'hard';
+      }
+
+      function applyHotfixStyles(span, freezeType) {
             span.style.display = 'inline-block';
             span.style.fontWeight = 'bold';
-            span.style.animation = 'flicker 0.5s infinite';
+            if (freezeType === 'hard') {
+                  span.style.color = '#ffffff';
+                  span.style.backgroundColor = redFullColour;
+                  span.style.padding = '0 3px';
+                  span.style.borderRadius = '3px';
+                  span.style.animation = 'flickerHard 0.3s infinite';
+            } else {
+                  span.style.color = redFullColour;
+                  span.style.animation = 'flicker 0.5s infinite';
+            }
             injectFlickerAnimation();
       }
 
@@ -95,6 +148,11 @@
             50%  { transform: scale(0.95) rotate(-1deg); opacity: 0.85; }
             75%  { transform: scale(1.05) rotate(2deg); opacity: 0.95; }
             100% { transform: scale(1) rotate(-1deg); opacity: 0.9; }
+        }
+        @keyframes flickerHard {
+            0%   { transform: scale(1) rotate(-1deg); opacity: 1; box-shadow: 0 0 4px 1px #ff0000; }
+            50%  { transform: scale(1.12) rotate(1deg); opacity: 0.7; box-shadow: 0 0 12px 4px #ff0000; }
+            100% { transform: scale(1) rotate(-1deg); opacity: 1; box-shadow: 0 0 4px 1px #ff0000; }
         }
     `;
             document.head.appendChild(style);
@@ -130,7 +188,7 @@
             const issueId = extractClassicIssueId(row.id);
             if (!issueId || row.querySelector(`.${releaseTagClass}`)) return;
 
-            findTopParent(issueId).then(epicData => {
+            Promise.all([findTopParent(issueId), currentReleaseReady]).then(([epicData]) => {
                   if (!epicData?.id) return;
 
                   const span = createEpicSpan(epicData);
@@ -178,7 +236,7 @@
 
             processedIds.add(issueId);
 
-            findTopParent(issueId).then(epicData => {
+            Promise.all([findTopParent(issueId), currentReleaseReady]).then(([epicData]) => {
                   if (!epicData?.id) return;
 
                   // Re-query the subject content — the row may have been recycled

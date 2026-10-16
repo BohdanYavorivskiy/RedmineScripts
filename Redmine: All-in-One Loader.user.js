@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: All-in-One Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.7
 // @description  Single loader that bundles every Redmine userscript via @require. Install only this one to get all features.
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -18,7 +18,7 @@
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20btn%20to%20testing.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20parent%20task%20suggestion.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20redmine%20tag%20Interactive%20Gantt.js
-// @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20tags.user.js
+// // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Add%20tags.user.js
 // @require      https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20Highlite%20time.user.js
 
 // @downloadURL  https://raw.githubusercontent.com/BohdanYavorivskiy/RedmineScripts/main/Redmine%3A%20All-in-One%20Loader.user.js
