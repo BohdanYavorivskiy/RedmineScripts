@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine: Add tags selector
 // @namespace    http://tampermonkey.net/
-// @version      1.0.7
+// @version      1.0.8
 // @description  Add tags setector near Issue Subject fild
 // @author       Bohdan Y.
 // @match        http://redmine.cmbu-engineering.diasemi.com/*
@@ -49,6 +49,7 @@
             "[Drivers] - issues related to drivers",
             "[UnappliedChanges] - issues related to Unapplied Changes pop-up",
             "[Bitstream] - For issues related to general bitstream",
+            "[HardwareSrc] - For issues related to Hardware Sources",
 
             // Development platforms
             "[DPS] - Development Platform Selector",
